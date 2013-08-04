@@ -5,6 +5,8 @@
 		"logprinter.exe 1",
 		"logprinter.exe 2"
 
-	]
+	],
+
+	"interval" : "60000"
 }
 

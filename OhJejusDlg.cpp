@@ -183,7 +183,9 @@ void COhJejusDlg::OnBnClickedButtonStart()
 		ExecuteProcess(info);
 	}
 
-	SetTimer( ID_TIMER_CHECK_PROCESS, 1000 , NULL);
+	SetTimer( ID_TIMER_CHECK_PROCESS, g_IntervalTime, NULL);
+	LogPrint( "interval time = %d", g_IntervalTime );
+
 }
 
 /**

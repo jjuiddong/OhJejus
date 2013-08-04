@@ -4,6 +4,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+int g_IntervalTime = 6000;
 
 /**
  @brief config 파일 읽음.
@@ -36,6 +37,9 @@ bool ReadConfigFile( const string &fileName, OUT ProcessDatas &out )
 				out.push_back( info );
 			}
 		}
+
+		string interval = props.get<string>("interval", "6000");
+		g_IntervalTime = atoi(interval.c_str());
 	}
 	catch (std::exception &e)
 	{

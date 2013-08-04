@@ -19,9 +19,10 @@ struct SProcessData
 typedef vector<SProcessData> ProcessDatas;
 
 
+extern int g_IntervalTime;
+
 
 // Function
-
 bool ReadConfigFile( const string &fileName, OUT ProcessDatas &out );
 void LogPrint( const char *fmt, ... );
 
