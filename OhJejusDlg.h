@@ -1,4 +1,5 @@
 #pragma once
+#include "afxwin.h"
 
 
 class COhJejusDlg : public CDialogEx
@@ -13,10 +14,10 @@ protected:
 
 protected:
 	void ExecuteProcess( INOUT SProcessData &procInfo );
+	void ProcessListing( const ProcessDatas &processes );
 
 	ProcessDatas m_Processes;
 	HICON m_hIcon;
-
 
 	// 생성된 메시지 맵 함수
 	virtual BOOL OnInitDialog();
@@ -27,4 +28,5 @@ protected:
 public:
 	afx_msg void OnBnClickedButtonStart();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	CListBox m_List;
 };

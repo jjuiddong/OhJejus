@@ -11,6 +11,9 @@ struct SProcessData
 {
 	string cmdLine;
 	PROCESS_INFORMATION pi;
+	HWND hWnd;
+	
+	SProcessData() {hWnd = NULL; }
 };
 
 typedef vector<SProcessData> ProcessDatas;

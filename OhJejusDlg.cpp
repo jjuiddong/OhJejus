@@ -28,6 +28,7 @@ COhJejusDlg::COhJejusDlg(CWnd* pParent /*=NULL*/)
 void COhJejusDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_LIST_PROCESS, m_List);
 }
 
 BEGIN_MESSAGE_MAP(COhJejusDlg, CDialogEx)
@@ -71,6 +72,33 @@ BOOL COhJejusDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
+
+	string errMsg;
+	int nArgs;
+	LPWSTR *szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+	if (nArgs >= 2)
+	{
+		CString arg = szArglist[ 1];
+		CStringA charstr(arg);
+		string str = charstr;
+
+		if (!ReadConfigFile( str, m_Processes))
+		{
+			::AfxMessageBox( _T("Error!! ReadConfigFile") );
+		}
+		else
+		{
+			LogPrint( "Success Read Config File" );
+		}
+	}
+	else
+	{
+		::AfxMessageBox( _T("Error!! config 파일 경로를 실행 인자값에 넣어주세요.") );
+		PostQuitMessage(0);
+		return FALSE;
+	}
+
+	ProcessListing( m_Processes );
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -126,6 +154,19 @@ HCURSOR COhJejusDlg::OnQueryDragIcon()
 /**
  @brief 
  */
+void COhJejusDlg::ProcessListing( const ProcessDatas &processes )
+{
+	BOOST_FOREACH (auto &info, processes)
+	{
+		CStringA str = info.cmdLine.c_str();
+		m_List.AddString( CString(str) );
+	}
+}
+
+
+/**
+ @brief 
+ */
 void COhJejusDlg::OnBnClickedButtonStart()
 {
 	static BOOL onlyOne = TRUE;
@@ -136,14 +177,14 @@ void COhJejusDlg::OnBnClickedButtonStart()
 	}
 	onlyOne = FALSE;
 
-	SProcessData info;
-	info.cmdLine = "LogPrinter.exe";
-	ExecuteProcess( info );
-	m_Processes.push_back(info);
+	// 프로세스 실행.
+	BOOST_FOREACH(auto &info, m_Processes)
+	{
+		ExecuteProcess(info);
+	}
 
 	SetTimer( ID_TIMER_CHECK_PROCESS, 1000 , NULL);
 }
-
 
 /**
  @brief 주기적으로 프로세스가 살아있는지 검사한다.
@@ -194,3 +235,4 @@ void COhJejusDlg::ExecuteProcess( INOUT SProcessData &procInfo )
 		return;
 	}
 }
+
