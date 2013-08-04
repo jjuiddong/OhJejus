@@ -99,6 +99,7 @@
     <None Include="res\OhJejus.rc2" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Global.h" />
     <ClInclude Include="OhJejus.h" />
     <ClInclude Include="OhJejusDlg.h" />
     <ClInclude Include="Resource.h" />
@@ -106,6 +107,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Global.cpp" />
     <ClCompile Include="OhJejus.cpp" />
     <ClCompile Include="OhJejusDlg.cpp" />
     <ClCompile Include="stdafx.cpp">
@@ -119,4 +121,9 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties RESOURCE_FILE="OhJejus.rc" />
+    </VisualStudio>
+  </ProjectExtensions>
 </Project>

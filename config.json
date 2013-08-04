@@ -1,0 +1,10 @@
+
+{
+	"process" : [
+
+		"logprinter.exe 1",
+		"logprinter.exe 2",
+
+	]
+}
+

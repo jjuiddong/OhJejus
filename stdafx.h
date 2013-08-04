@@ -56,3 +56,34 @@
 #endif
 
 
+
+#include <list>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <iterator>
+#include <algorithm>
+#include <boost/foreach.hpp>
+
+using std::list;
+using std::vector;
+using std::string;
+using std::stringstream;
+
+
+
+#ifndef INOUT
+	#define INOUT
+#endif
+
+#ifndef IN
+	#define IN
+#endif
+
+#ifndef OUT
+	#define OUT
+#endif
+
+
+#include "Global.h"

@@ -12,39 +12,9 @@
 #endif
 
 
-// 응용 프로그램 정보에 사용되는 CAboutDlg 대화 상자입니다.
-
-class CAboutDlg : public CDialogEx
-{
-public:
-	CAboutDlg();
-
-// 대화 상자 데이터입니다.
-	enum { IDD = IDD_ABOUTBOX };
-
-	protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
-
-// 구현입니다.
-protected:
-	DECLARE_MESSAGE_MAP()
+enum {
+	ID_TIMER_CHECK_PROCESS = 100,
 };
-
-CAboutDlg::CAboutDlg() : CDialogEx(CAboutDlg::IDD)
-{
-}
-
-void CAboutDlg::DoDataExchange(CDataExchange* pDX)
-{
-	CDialogEx::DoDataExchange(pDX);
-}
-
-BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
-END_MESSAGE_MAP()
-
-
-// COhJejusDlg 대화 상자
-
 
 
 
@@ -52,6 +22,7 @@ COhJejusDlg::COhJejusDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(COhJejusDlg::IDD, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+	m_Processes.reserve(4);
 }
 
 void COhJejusDlg::DoDataExchange(CDataExchange* pDX)
@@ -63,6 +34,8 @@ BEGIN_MESSAGE_MAP(COhJejusDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_BN_CLICKED(IDC_BUTTON_START, &COhJejusDlg::OnBnClickedButtonStart)
+	ON_WM_TIMER()
 END_MESSAGE_MAP()
 
 
@@ -106,8 +79,6 @@ void COhJejusDlg::OnSysCommand(UINT nID, LPARAM lParam)
 {
 	if ((nID & 0xFFF0) == IDM_ABOUTBOX)
 	{
-		CAboutDlg dlgAbout;
-		dlgAbout.DoModal();
 	}
 	else
 	{
@@ -151,3 +122,75 @@ HCURSOR COhJejusDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+
+/**
+ @brief 
+ */
+void COhJejusDlg::OnBnClickedButtonStart()
+{
+	static BOOL onlyOne = TRUE;
+	if (!onlyOne)
+	{
+		LogPrint( "이미 실행중입니다." );
+		return;
+	}
+	onlyOne = FALSE;
+
+	SProcessData info;
+	info.cmdLine = "LogPrinter.exe";
+	ExecuteProcess( info );
+	m_Processes.push_back(info);
+
+	SetTimer( ID_TIMER_CHECK_PROCESS, 1000 , NULL);
+}
+
+
+/**
+ @brief 주기적으로 프로세스가 살아있는지 검사한다.
+ */
+void COhJejusDlg::OnTimer(UINT_PTR nIDEvent)
+{
+	BOOST_FOREACH(auto &info, m_Processes)
+	{
+		DWORD exitCode;
+		const BOOL result = GetExitCodeProcess(info.pi.hProcess, &exitCode);
+		const DWORD errorCode = GetLastError();
+		if(STILL_ACTIVE == exitCode)
+		{
+			// active
+			// nothing~
+		}
+		else
+		{
+			// terminate
+			// resurvive
+			LogPrint( "terminate [%s] process ", info.cmdLine.c_str() );
+			ExecuteProcess( info );
+		}
+	}
+
+	CDialogEx::OnTimer(nIDEvent);
+}
+
+
+/**
+ @brief 프로세스 실행
+			프로세스 정보를 저장해서 리턴한다.
+ */
+void COhJejusDlg::ExecuteProcess( INOUT SProcessData &procInfo )
+{
+	STARTUPINFOA si = {0};
+	ZeroMemory(&si,sizeof(si));
+	ZeroMemory(&procInfo.pi,sizeof(procInfo.pi));
+	si.cb = sizeof(STARTUPINFOA);
+	si.dwFlags=STARTF_USESHOWWINDOW;
+	si.wShowWindow=SW_SHOW;
+
+	stringstream ss;
+	ss << procInfo.cmdLine;
+
+	if (!::CreateProcessA(NULL, (char*)ss.str().c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &procInfo.pi))
+	{
+		return;
+	}
+}
