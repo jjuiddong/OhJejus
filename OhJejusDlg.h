@@ -14,9 +14,11 @@ protected:
 
 protected:
 	void ExecuteProcess( INOUT SProcessData &procInfo );
+	void TerminateProcess( INOUT SProcessData &procInfo );
 	void ProcessListing( const ProcessDatas &processes );
 
 	ProcessDatas m_Processes;
+	BOOL m_IsRunning;
 	HICON m_hIcon;
 
 	// 생성된 메시지 맵 함수
@@ -29,4 +31,5 @@ public:
 	afx_msg void OnBnClickedButtonStart();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	CListBox m_List;
+	afx_msg void OnBnClickedButtonStop();
 };

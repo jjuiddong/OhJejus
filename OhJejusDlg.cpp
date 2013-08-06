@@ -20,6 +20,7 @@ enum {
 
 COhJejusDlg::COhJejusDlg(CWnd* pParent /*=NULL*/)
 	: CDialogEx(COhJejusDlg::IDD, pParent)
+,	m_IsRunning(FALSE)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	m_Processes.reserve(4);
@@ -37,6 +38,7 @@ BEGIN_MESSAGE_MAP(COhJejusDlg, CDialogEx)
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDC_BUTTON_START, &COhJejusDlg::OnBnClickedButtonStart)
 	ON_WM_TIMER()
+	ON_BN_CLICKED(IDC_BUTTON_STOP, &COhJejusDlg::OnBnClickedButtonStop)
 END_MESSAGE_MAP()
 
 
@@ -169,13 +171,13 @@ void COhJejusDlg::ProcessListing( const ProcessDatas &processes )
  */
 void COhJejusDlg::OnBnClickedButtonStart()
 {
-	static BOOL onlyOne = TRUE;
-	if (!onlyOne)
+	if (m_IsRunning)
 	{
 		LogPrint( "이미 실행중입니다." );
 		return;
 	}
-	onlyOne = FALSE;
+
+	m_IsRunning = TRUE;
 
 	// 프로세스 실행.
 	BOOST_FOREACH(auto &info, m_Processes)
@@ -238,3 +240,26 @@ void COhJejusDlg::ExecuteProcess( INOUT SProcessData &procInfo )
 	}
 }
 
+
+/**
+ @brief 
+ */
+void COhJejusDlg::TerminateProcess( INOUT SProcessData &procInfo )
+{
+	::TerminateProcess( procInfo.pi.hProcess, 0 );
+}
+
+
+/**
+ @brief 전체 프로그램 종료.
+ */
+void COhJejusDlg::OnBnClickedButtonStop()
+{
+	BOOST_FOREACH(auto &info, m_Processes)
+	{
+		TerminateProcess(info);
+	}
+
+	KillTimer( ID_TIMER_CHECK_PROCESS );
+	m_IsRunning = FALSE;
+}
