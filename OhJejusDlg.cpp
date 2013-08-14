@@ -74,6 +74,10 @@ BOOL COhJejusDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
+	::SetWindowPos( GetSafeHwnd(),
+		HWND_TOPMOST,
+		0, 0, 0, 0,
+		SWP_NOMOVE | SWP_NOREDRAW | SWP_NOSIZE );
 
 	string errMsg;
 	int nArgs;
