@@ -29,7 +29,7 @@ COhJejusDlg::COhJejusDlg(CWnd* pParent /*=NULL*/)
 void COhJejusDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_LIST_PROCESS, m_List);
+	DDX_Control(pDX, IDC_LIST_PROCESS2, m_List2);
 }
 
 BEGIN_MESSAGE_MAP(COhJejusDlg, CDialogEx)
@@ -39,6 +39,7 @@ BEGIN_MESSAGE_MAP(COhJejusDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_START, &COhJejusDlg::OnBnClickedButtonStart)
 	ON_WM_TIMER()
 	ON_BN_CLICKED(IDC_BUTTON_STOP, &COhJejusDlg::OnBnClickedButtonStop)
+	ON_NOTIFY(LVN_ITEMCHANGED, IDC_LIST_PROCESS2, &COhJejusDlg::OnLvnItemchangedListProcess2)
 END_MESSAGE_MAP()
 
 
@@ -74,10 +75,10 @@ BOOL COhJejusDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
-	::SetWindowPos( GetSafeHwnd(),
-		HWND_TOPMOST,
-		0, 0, 0, 0,
+	::SetWindowPos( GetSafeHwnd(), HWND_TOPMOST, 0, 0, 0, 0,
 		SWP_NOMOVE | SWP_NOREDRAW | SWP_NOSIZE );
+
+	m_List2.SetExtendedStyle( m_List2.GetExtendedStyle() | LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
 
 	string errMsg;
 	int nArgs;
@@ -165,7 +166,8 @@ void COhJejusDlg::ProcessListing( const ProcessDatas &processes )
 	BOOST_FOREACH (auto &info, processes)
 	{
 		CStringA str = info.cmdLine.c_str();
-		m_List.AddString( CString(str) );
+		const int item = m_List2.InsertItem( m_List2.GetItemCount(), CString(str) , 0 );
+		m_List2.SetCheck( item, TRUE );
 	}
 }
 
@@ -201,6 +203,9 @@ void COhJejusDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	BOOST_FOREACH(auto &info, m_Processes)
 	{
+		if (!info.checkProcess)
+			continue;
+
 		DWORD exitCode;
 		const BOOL result = GetExitCodeProcess(info.pi.hProcess, &exitCode);
 		const DWORD errorCode = GetLastError();
@@ -266,4 +271,30 @@ void COhJejusDlg::OnBnClickedButtonStop()
 
 	KillTimer( ID_TIMER_CHECK_PROCESS );
 	m_IsRunning = FALSE;
+}
+
+
+
+void COhJejusDlg::OnLvnItemchangedListProcess2(NMHDR *pNMHDR, LRESULT *pResult)
+{
+	LPNMLISTVIEW pNMLV = reinterpret_cast<LPNMLISTVIEW>(pNMHDR);
+	*pResult = 0;
+
+	if (pNMLV->uOldState == 0 && pNMLV->uNewState == 0)
+		return;    // No change
+
+	// Old check box state
+	BOOL bPrevState = (BOOL)(((pNMLV->uOldState & LVIS_STATEIMAGEMASK)>>12)-1);  
+	if (bPrevState < 0)    // On startup there's no previous state 
+		bPrevState = 0; // so assign as false (unchecked)
+
+	// New check box state
+	BOOL bChecked = (BOOL)(((pNMLV->uNewState & LVIS_STATEIMAGEMASK)>>12)-1);   
+	if (bChecked < 0) // On non-checkbox notifications assume false
+		bChecked = 0; 
+
+	if (bPrevState == bChecked) // No change in check box
+		return;
+
+	m_Processes[ pNMLV->iItem].checkProcess = (bChecked? true : false);
 }

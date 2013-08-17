@@ -12,8 +12,9 @@ struct SProcessData
 	string cmdLine;
 	PROCESS_INFORMATION pi;
 	HWND hWnd;
+	bool checkProcess; // default : true
 	
-	SProcessData() {hWnd = NULL; }
+	SProcessData() : checkProcess(true) {hWnd = NULL; }
 };
 
 typedef vector<SProcessData> ProcessDatas;

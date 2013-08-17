@@ -1,5 +1,6 @@
 #pragma once
 #include "afxwin.h"
+#include "afxcmn.h"
 
 
 class COhJejusDlg : public CDialogEx
@@ -30,6 +31,7 @@ protected:
 public:
 	afx_msg void OnBnClickedButtonStart();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
-	CListBox m_List;
 	afx_msg void OnBnClickedButtonStop();
+	CListCtrl m_List2;
+	afx_msg void OnLvnItemchangedListProcess2(NMHDR *pNMHDR, LRESULT *pResult);
 };
