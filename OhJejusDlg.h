@@ -14,6 +14,8 @@ protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 지원입니다.
 
 protected:
+	bool InitConfigFile();
+
 	void ExecuteProcess( INOUT SProcessData &procInfo );
 	void TerminateProcess( INOUT SProcessData &procInfo );
 	void ProcessListing( const ProcessDatas &processes );
@@ -32,6 +34,7 @@ public:
 	afx_msg void OnBnClickedButtonStart();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnBnClickedButtonStop();
-	CListCtrl m_List2;
+	CListCtrl m_List;
 	afx_msg void OnLvnItemchangedListProcess2(NMHDR *pNMHDR, LRESULT *pResult);
+	afx_msg void OnBnClickedButtonReload();
 };

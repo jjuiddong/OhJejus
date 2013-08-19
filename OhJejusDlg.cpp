@@ -29,7 +29,7 @@ COhJejusDlg::COhJejusDlg(CWnd* pParent /*=NULL*/)
 void COhJejusDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	DDX_Control(pDX, IDC_LIST_PROCESS2, m_List2);
+	DDX_Control(pDX, IDC_LIST_PROCESS2, m_List);
 }
 
 BEGIN_MESSAGE_MAP(COhJejusDlg, CDialogEx)
@@ -40,6 +40,7 @@ BEGIN_MESSAGE_MAP(COhJejusDlg, CDialogEx)
 	ON_WM_TIMER()
 	ON_BN_CLICKED(IDC_BUTTON_STOP, &COhJejusDlg::OnBnClickedButtonStop)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_LIST_PROCESS2, &COhJejusDlg::OnLvnItemchangedListProcess2)
+	ON_BN_CLICKED(IDC_BUTTON_RELOAD, &COhJejusDlg::OnBnClickedButtonReload)
 END_MESSAGE_MAP()
 
 
@@ -78,34 +79,13 @@ BOOL COhJejusDlg::OnInitDialog()
 	::SetWindowPos( GetSafeHwnd(), HWND_TOPMOST, 0, 0, 0, 0,
 		SWP_NOMOVE | SWP_NOREDRAW | SWP_NOSIZE );
 
-	m_List2.SetExtendedStyle( m_List2.GetExtendedStyle() | LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
+	m_List.SetExtendedStyle( m_List.GetExtendedStyle() | LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
+	m_List.InsertColumn( 0, L"Process" );
+	m_List.SetColumnWidth(0, 250 );
+	m_List.InsertColumn( 1, L"State" );
+	m_List.SetColumnWidth(1, 60 );
 
-	string errMsg;
-	int nArgs;
-	LPWSTR *szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
-	if (nArgs >= 2)
-	{
-		CString arg = szArglist[ 1];
-		CStringA charstr(arg);
-		string str = charstr;
-
-		if (!ReadConfigFile( str, m_Processes))
-		{
-			::AfxMessageBox( _T("Error!! ReadConfigFile") );
-		}
-		else
-		{
-			LogPrint( "Success Read Config File" );
-		}
-	}
-	else
-	{
-		::AfxMessageBox( _T("Error!! config 파일 경로를 실행 인자값에 넣어주세요.") );
-		PostQuitMessage(0);
-		return FALSE;
-	}
-
-	ProcessListing( m_Processes );
+	InitConfigFile();
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -163,11 +143,13 @@ HCURSOR COhJejusDlg::OnQueryDragIcon()
  */
 void COhJejusDlg::ProcessListing( const ProcessDatas &processes )
 {
+	m_List.DeleteAllItems();
+
 	BOOST_FOREACH (auto &info, processes)
 	{
 		CStringA str = info.cmdLine.c_str();
-		const int item = m_List2.InsertItem( m_List2.GetItemCount(), CString(str) , 0 );
-		m_List2.SetCheck( item, TRUE );
+		const int item = m_List.InsertItem( m_List.GetItemCount(), CString(str) , 0 );
+		m_List.SetCheck( item, info.checkProcess );
 	}
 }
 
@@ -201,25 +183,36 @@ void COhJejusDlg::OnBnClickedButtonStart()
  */
 void COhJejusDlg::OnTimer(UINT_PTR nIDEvent)
 {
-	BOOST_FOREACH(auto &info, m_Processes)
+	for (u_int i=0; i < m_Processes.size(); ++i)
 	{
-		if (!info.checkProcess)
-			continue;
+		auto &info = m_Processes[ i];
 
-		DWORD exitCode;
-		const BOOL result = GetExitCodeProcess(info.pi.hProcess, &exitCode);
-		const DWORD errorCode = GetLastError();
+		DWORD exitCode = 0;
+		if (info.pi.hProcess)
+			GetExitCodeProcess(info.pi.hProcess, &exitCode);
+		//const DWORD errorCode = GetLastError();
+
 		if(STILL_ACTIVE == exitCode)
 		{
-			// active
-			// nothing~
+			info.state = ALIVE;
+			m_List.SetItemText( i, 1, L"Alive" );
 		}
 		else
 		{
 			// terminate
 			// resurvive
-			LogPrint( "terminate [%s] process ", info.cmdLine.c_str() );
-			ExecuteProcess( info );
+			if (info.checkProcess)
+			{
+				LogPrint( "terminate [%s] process ", info.cmdLine.c_str() );
+				ExecuteProcess( info );
+				info.state = ALIVE;
+				m_List.SetItemText( i, 1, L"Wake" );
+			}
+			else
+			{
+				info.state = DEAD;
+				m_List.SetItemText( i, 1, L"Dead" );
+			}
 		}
 	}
 
@@ -233,6 +226,9 @@ void COhJejusDlg::OnTimer(UINT_PTR nIDEvent)
  */
 void COhJejusDlg::ExecuteProcess( INOUT SProcessData &procInfo )
 {
+	if (!procInfo.checkProcess)
+		return;
+
 	STARTUPINFOA si = {0};
 	ZeroMemory(&si,sizeof(si));
 	ZeroMemory(&procInfo.pi,sizeof(procInfo.pi));
@@ -264,9 +260,10 @@ void COhJejusDlg::TerminateProcess( INOUT SProcessData &procInfo )
  */
 void COhJejusDlg::OnBnClickedButtonStop()
 {
-	BOOST_FOREACH(auto &info, m_Processes)
+	for (u_int i=0; i < m_Processes.size(); ++i)
 	{
-		TerminateProcess(info);
+		TerminateProcess(m_Processes[ i]);
+		m_List.SetItemText( i, 1, L"Dead" );
 	}
 
 	KillTimer( ID_TIMER_CHECK_PROCESS );
@@ -297,4 +294,81 @@ void COhJejusDlg::OnLvnItemchangedListProcess2(NMHDR *pNMHDR, LRESULT *pResult)
 		return;
 
 	m_Processes[ pNMLV->iItem].checkProcess = (bChecked? true : false);
+}
+
+
+/**
+@brief  스크립트를 재로딩한다.
+*/
+void COhJejusDlg::OnBnClickedButtonReload()
+{
+	InitConfigFile();
+}
+
+
+/**
+@brief  config 파일을 읽고, 리스트를 초기화 한다.
+*/
+bool COhJejusDlg::InitConfigFile()
+{
+	BOOST_FOREACH (auto &proc, m_Processes)
+		proc.data = 0;
+
+	ProcessDatas tempData;
+	int nArgs;
+	LPWSTR *szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+	if (nArgs >= 2)
+	{
+		CString arg = szArglist[ 1];
+		CStringA charstr(arg);
+		string str = charstr;
+
+		//m_Processes.clear();
+		if (!ReadConfigFile( str, tempData))
+		{
+			::AfxMessageBox( _T("Error!! ReadConfigFile") );
+		}
+		else
+		{
+			LogPrint( "Success Read Config File" );
+		}
+	}
+	else
+	{
+		::AfxMessageBox( _T("Error!! config 파일 경로를 실행 인자값에 넣어주세요.") );
+		PostQuitMessage(0);
+		return false;
+	}
+
+	// 정상적으로 읽기를 완료했다면, 현재 실행 중인 프로세스와 비교후에 추가한다.
+	// 같은 이름의 프로세스는 추가 되지 않는다.
+	// 컨피그 파일에 없는 프로세스는 실행 중이라면, 그대로 두고, 그렇지 않다면 제거한다.
+	BOOST_FOREACH (auto &info, tempData)
+	{
+		info.data = 0;
+		info.state = ALIVE; // 살아있은 프로세스를 먼저 탐색한다.
+		auto it = std::find(m_Processes.begin(), m_Processes.end(), info);
+		if (m_Processes.end() == it)
+		{
+			info.checkProcess = false;
+			m_Processes.push_back( info );
+			m_Processes.back().data = 1; // 검색에서 제외 시킬것.
+		}
+		else
+		{
+			it->data = 1; // 한번 탐색된 프로세스는 다시 탐색되지 않게 하기 위함.
+		}
+	}
+
+	// 스크립트에 없는 프로세스는 제거한다. (만약 실행 중이라면 그대로 둔다.)
+	for (int i=m_Processes.size()-1; i >= 0; --i)
+	{
+		if ((m_Processes[ i].data==0) && (DEAD == m_Processes[ i].state))
+		{
+			m_Processes.erase( m_Processes.begin() + i );
+		}
+	}
+
+	ProcessListing( m_Processes );
+	return true;
 }
