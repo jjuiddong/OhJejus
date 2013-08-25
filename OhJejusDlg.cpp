@@ -81,7 +81,7 @@ BOOL COhJejusDlg::OnInitDialog()
 
 	m_List.SetExtendedStyle( m_List.GetExtendedStyle() | LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT);
 	m_List.InsertColumn( 0, L"Process" );
-	m_List.SetColumnWidth(0, 250 );
+	m_List.SetColumnWidth(0, 530 );
 	m_List.InsertColumn( 1, L"State" );
 	m_List.SetColumnWidth(1, 60 );
 
