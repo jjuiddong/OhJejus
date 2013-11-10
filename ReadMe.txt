@@ -1,1 +1,1 @@
-resurvive program
+revive program
